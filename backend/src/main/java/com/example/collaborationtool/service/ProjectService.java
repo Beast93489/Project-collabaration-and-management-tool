@@ -11,6 +11,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProjectService {
     private final ProjectRepository projectRepository;
+    private final ActivityService activityService;
     
     public List<Project> getAllProjects() {
         return projectRepository.findAll();
@@ -21,6 +22,8 @@ public class ProjectService {
     }
     
     public Project createProject(Project project) {
-        return projectRepository.save(project);
+        Project saved = projectRepository.save(project);
+        activityService.logActivity("New project created: " + saved.getTitle(), null, saved.getId(), null);
+        return saved;
     }
 }

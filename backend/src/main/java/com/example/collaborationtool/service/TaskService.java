@@ -8,11 +8,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import com.example.collaborationtool.service.ActivityService;
+
 @Service
 @RequiredArgsConstructor
 public class TaskService {
     private final TaskRepository taskRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ActivityService activityService;
     
     public List<Task> getTasksByProjectId(Long projectId) {
         return taskRepository.findByProjectId(projectId);
@@ -24,6 +27,7 @@ public class TaskService {
     
     public Task createTask(Task task) {
         Task saved = taskRepository.save(task);
+        activityService.logActivity("New task added: " + saved.getTitle(), saved.getAssignee(), saved.getProjectId(), saved.getId());
         messagingTemplate.convertAndSend("/topic/tasks", saved);
         return saved;
     }
@@ -37,6 +41,7 @@ public class TaskService {
         if (taskDetails.getAssignee() != null) task.setAssignee(taskDetails.getAssignee());
         
         Task saved = taskRepository.save(task);
+        activityService.logActivity("Task updated: " + saved.getTitle(), saved.getAssignee(), saved.getProjectId(), saved.getId());
         messagingTemplate.convertAndSend("/topic/tasks", saved);
         return saved;
     }
