@@ -8,8 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import com.example.collaborationtool.service.ActivityService;
-
 @Service
 @RequiredArgsConstructor
 public class TaskService {
@@ -27,7 +25,8 @@ public class TaskService {
     
     public Task createTask(Task task) {
         Task saved = taskRepository.save(task);
-        activityService.logActivity("New task added: " + saved.getTitle(), saved.getAssignee(), saved.getProjectId(), saved.getId());
+        Long projectId = saved.getProject() != null ? saved.getProject().getId() : null;
+        activityService.logActivity("New task added: " + saved.getTitle(), saved.getAssignee(), projectId, saved.getId());
         messagingTemplate.convertAndSend("/topic/tasks", saved);
         return saved;
     }
@@ -39,14 +38,24 @@ public class TaskService {
         if (taskDetails.getStatus() != null) task.setStatus(taskDetails.getStatus());
         if (taskDetails.getPriority() != null) task.setPriority(taskDetails.getPriority());
         if (taskDetails.getAssignee() != null) task.setAssignee(taskDetails.getAssignee());
+        if (taskDetails.getDueDate() != null) task.setDueDate(taskDetails.getDueDate());
         
         Task saved = taskRepository.save(task);
-        activityService.logActivity("Task updated: " + saved.getTitle(), saved.getAssignee(), saved.getProjectId(), saved.getId());
+        Long projectId = saved.getProject() != null ? saved.getProject().getId() : null;
+        activityService.logActivity("Task updated: " + saved.getTitle(), saved.getAssignee(), projectId, saved.getId());
         messagingTemplate.convertAndSend("/topic/tasks", saved);
         return saved;
     }
     
     public Task getTaskById(Long id) {
         return taskRepository.findById(id).orElseThrow();
+    }
+
+    public void deleteTask(Long id) {
+        Task task = taskRepository.findById(id).orElseThrow();
+        Long projectId = task.getProject() != null ? task.getProject().getId() : null;
+        activityService.logActivity("Task deleted: " + task.getTitle(), task.getAssignee(), projectId, id);
+        taskRepository.deleteById(id);
+        messagingTemplate.convertAndSend("/topic/task-deleted", id);
     }
 }

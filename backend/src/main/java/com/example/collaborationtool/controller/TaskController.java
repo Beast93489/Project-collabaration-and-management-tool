@@ -1,11 +1,7 @@
 package com.example.collaborationtool.controller;
 
-import com.example.collaborationtool.entity.Activity;
 import com.example.collaborationtool.entity.Task;
-import com.example.collaborationtool.entity.User;
-import com.example.collaborationtool.service.ActivityService;
 import com.example.collaborationtool.service.TaskService;
-import com.example.collaborationtool.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,8 +13,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskController {
     private final TaskService taskService;
-    private final ActivityService activityService;
-    private final UserService userService;
     
     @GetMapping
     public List<Task> getAllTasks() {
@@ -31,27 +25,17 @@ public class TaskController {
     }
     
     @PostMapping
-    public Task createTask(@RequestBody Task task, @RequestHeader(value="userId", required=false) Long userId) {
-        Task created = taskService.createTask(task);
-        if (userId != null) {
-            User u = userService.getUserById(userId);
-            activityService.logActivity(u.getName() + " created task: " + created.getTitle(), u, created.getProject() != null ? created.getProject().getId() : null, created.getId());
-        }
-        return created;
+    public Task createTask(@RequestBody Task task) {
+        return taskService.createTask(task);
     }
     
     @PutMapping("/{id}")
-    public Task updateTask(@PathVariable Long id, @RequestBody Task taskDetails, @RequestHeader(value="userId", required=false) Long userId) {
-        Task oldTask = taskService.getTaskById(id);
-        String oldStatus = oldTask.getStatus();
-        
-        Task updated = taskService.updateTask(id, taskDetails);
-        
-        if (userId != null && taskDetails.getStatus() != null && !taskDetails.getStatus().equals(oldStatus)) {
-            User u = userService.getUserById(userId);
-            activityService.logActivity(u.getName() + " moved task '" + updated.getTitle() + "' to " + updated.getStatus(), u, updated.getProject() != null ? updated.getProject().getId() : null, updated.getId());
-        }
-        
-        return updated;
+    public Task updateTask(@PathVariable Long id, @RequestBody Task taskDetails) {
+        return taskService.updateTask(id, taskDetails);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteTask(@PathVariable Long id) {
+        taskService.deleteTask(id);
     }
 }
